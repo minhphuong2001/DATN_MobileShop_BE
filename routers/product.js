@@ -1,6 +1,7 @@
 const express = require("express");
 const { verifyAccessToken } = require("../middlewares/verifyToken");
 const productController = require("../controllers/productController");
+const productVersionController = require("../controllers/productVersionController");
 const permission = require("../middlewares/permission");
 const multer = require("multer");
 

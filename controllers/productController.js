@@ -68,8 +68,6 @@ module.exports = {
 
   create: asyncHandle(async (req, res) => {
     let { ...body } = req.body;
-    //upload list image
-    // console.log(req.files["images"]);
 
     let promImage = req.files["images"].map((v) => {
       return cloudinary.uploader.upload(v.path);

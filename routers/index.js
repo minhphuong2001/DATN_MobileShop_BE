@@ -5,6 +5,7 @@ const categoryRouter = require("./category");
 const authRouter = require("./auth");
 const accRouter = require("./account");
 const productRouter = require("./product");
+const productVersionRouter = require("./product-version");
 
 module.exports = (app) => {
 
@@ -15,6 +16,8 @@ module.exports = (app) => {
   app.use("/api/category", categoryRouter)
 
   app.use("/api/product", productRouter)
+  
+  app.use("/api/product-version", productVersionRouter)
 
 
 
