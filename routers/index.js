@@ -6,6 +6,8 @@ const authRouter = require("./auth");
 const accRouter = require("./account");
 const productRouter = require("./product");
 const productVersionRouter = require("./product-version");
+const cartRouter = require("./cart");
+const orderRouter = require("./order");
 
 module.exports = (app) => {
 
@@ -19,11 +21,13 @@ module.exports = (app) => {
   
   app.use("/api/product-version", productVersionRouter)
 
-
-
   app.use("/api/account", accRouter)
 
   app.use("/api/auth", authRouter)
+
+  app.use("/api/cart", cartRouter)
+
+  app.use("/api/order", orderRouter)
   
   app.use(errorHandle);
 

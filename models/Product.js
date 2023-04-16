@@ -11,6 +11,8 @@ const ProductSchema = new Schema(
 		images: { type: [String], require: true },
 		discount: { type: Number, default: 0 },
 		deleted: { type: Number, default: 0 },
+		price: { type: Number, default: 0 },
+		sold: { type: Number, default: 0 },
 		slug: {
 			type: String,
 			slug: 'product_name'

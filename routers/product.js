@@ -30,4 +30,6 @@ router
   .put(verifyAccessToken, permission("admin"), productController.update)
   .delete(verifyAccessToken, permission("admin"), productController.delete);
 
+router.get("/category/:id", productController.getProductByCategory)
+
 module.exports = router;

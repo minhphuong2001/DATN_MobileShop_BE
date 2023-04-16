@@ -35,7 +35,12 @@ const UserSchema = new Schema(
       type: String,
       match: /^[0][0-9]{9}$/,
       default: ""
-		},
+    },
+    account_balance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 		deleted: { type: Number, default: 0 },
   },
   {

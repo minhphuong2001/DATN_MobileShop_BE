@@ -7,7 +7,9 @@ const CouponSchema = new Schema(
 		value: {type: Number, require: true },
 		status: { type: Number, default: 0 },
 		plan_quantity: { type: Number, default: 0 },
-		actual_quantity: { type: Number, default: 0 }
+		actual_quantity: { type: Number, default: 0 },
+		start: { type: Date },
+		end: { type: Date }
 	},
 	{
 		timestamps: true

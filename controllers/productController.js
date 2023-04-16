@@ -110,4 +110,13 @@ module.exports = {
 
     return sendResponse(res, "Delete successfully.", product);
   }),
+
+  getProductByCategory: asyncHandle(async (req, res) => {
+    console.log(categoryId);
+    const product = await Product.find({ category: { $in: [categoryId] } })
+    .populate("category")
+    .sort("-updatedAt")
+
+    return sendResponse(res, "Get list product by category successfully", product);
+  }),
 };

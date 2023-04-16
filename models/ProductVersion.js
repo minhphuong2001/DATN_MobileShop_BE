@@ -25,4 +25,4 @@ const ProductVersionSchema = new Schema(
 	}
 );
 
-module.exports = mongoose.model("product-versions", ProductVersionSchema);
+module.exports = mongoose.model("product_versions", ProductVersionSchema);
