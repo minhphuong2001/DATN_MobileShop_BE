@@ -12,7 +12,7 @@ const mongoose = require("mongoose");
 module.exports = {
   addOrder: asyncHandle(async (req, res, next) => {
     const userId = req.userId;
-    const { address, phone, note, carts } = req.body;
+    const { address, phone, note, carts, ...body } = req.body;
 
     // Simple validation
     if (!(address && phone && carts)) {
@@ -89,6 +89,7 @@ module.exports = {
             phone,
             note,
             total_amount: totalAmount,
+            body
           },
         ],
         options
@@ -153,7 +154,9 @@ module.exports = {
   // @access Only role user
   getOrderUser: asyncHandle(async (req, res, next) => {
     const userId = req.userId;
-    const orders = await Order.find({ user: userId }).populate({ path: 'order_details', populate: 'product_version'}).populate('user');
+    const orders = await Order.find({ user: userId })
+      .populate({ path: 'order_details', populate: 'product_version' })
+      .populate('user');
 
     res.json({ success: true, data: orders });
   }),
@@ -196,7 +199,15 @@ module.exports = {
     const orderId = req.params.id;
 
     const order = await Order.findById(orderId)
-      .populate({ path: "order_details", populate: "product_version" })
+      .populate(
+        {
+          path: "order_details",
+          populate: {
+            path: "product_version",
+            populate: "product"
+          }
+        }
+      )
       .populate("user");
     if (!order) return next(new ErrorResponse(404, "Not found order"));
 

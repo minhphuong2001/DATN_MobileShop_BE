@@ -12,14 +12,15 @@ router
 	.route("/user-order")
 	.get(verifyAccessToken, permission("user"), orderController.getOrderUser)
 router
+	.route("/user-order/:id")
+	.get(verifyAccessToken, orderController.getOrder)
+router
 	.route("/admin")
 	.get(verifyAccessToken, permission("admin"), orderController.getAllOrders)
 router
 	.route("/admin/:id")
 	.patch(verifyAccessToken, permission('admin'), orderController.updateStatus)
 	.delete(verifyAccessToken, permission('admin'), orderController.deleteOrder)
-router
-	.route("/:id")
-	.get(verifyAccessToken, orderController.getOrder)
+
 
 module.exports = router;

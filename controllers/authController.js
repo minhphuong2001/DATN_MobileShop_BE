@@ -6,6 +6,7 @@ const GenerateRefreshToken = require("../helpers/GenerateRefreshToken");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sendMail = require("../helpers/sendMail");
+const redisClient = require("../config/redis");
 const saltRounds = 10;
 
 module.exports = {
@@ -62,8 +63,8 @@ module.exports = {
 
     if (!user) {
       return next(new ErrorResponse(400, "Email hoặc mật khẩu không đúng"));
-		}
-		
+    }
+
     if (user.deleted == 1) {
       return next(new ErrorResponse(400, "Account has been deleted"));
     }
@@ -85,8 +86,8 @@ module.exports = {
 
     res.json({
       success: true,
-			message: "Logged in successfully",
-			data: user,
+      message: "Logged in successfully",
+      data: user,
       accessToken,
       refreshToken,
     });
@@ -160,10 +161,7 @@ module.exports = {
     // Check the difference between old password and new password
     if (password === newPassword) {
       return next(
-        new ErrorResponse(
-          400,
-          "Mật khẩu mới không được trùng với mật khẩu cũ"
-        )
+        new ErrorResponse(400, "Mật khẩu mới không được trùng với mật khẩu cũ")
       );
     }
 
@@ -183,7 +181,7 @@ module.exports = {
     const passwordValid = await bcrypt.compare(password, user.password);
 
     if (!passwordValid) {
-      return next(new ErrorResponse(400, "Mật khaair không đúng"));
+      return next(new ErrorResponse(400, "Mật khẩu không đúng"));
     }
 
     // Everything is good
@@ -191,7 +189,7 @@ module.exports = {
     user.password = hashedPassword;
     await user.save();
 
-    res.json({ success: true, message: "Change password successfully" });
+    res.json({ success: true, message: "Thay đổi mật khẩu thành công" });
   }),
 
   // @route [POST] /api/auth/token
@@ -226,20 +224,20 @@ module.exports = {
   // @route [GET] /api/auth/logout
   // @desc Log out account
   // @access private
-  // logout: asyncHandle(async (req, res, next) => {
-  //   const userId = req.userId;
+  logout: asyncHandle(async (req, res, next) => {
+    const userId = req.userId;
 
-  //   const user = await User.findOne({ _id: userId }).select("-password");
+    const user = await User.findOne({ _id: userId }).select("-password");
 
-  //   // Check for existing user
-  //   if (!user) {
-  //     return next(new ErrorResponse(404, "User does not exist"));
-  //   }
+    // Check for existing user
+    if (!user) {
+      return next(new ErrorResponse(404, "User does not exist"));
+    }
 
-  //   await redisClient.del(userId.toString());
+    await redisClient.del(userId.toString());
 
-  //   res.json({ success: true, message: "Log out successfully" });
-  // }),
+    res.json({ success: true, message: "Logout successfully" });
+  }),
 
   // @route [POST] /api/auth/forget-password
   // @desc Send password reset link to user's email
@@ -266,11 +264,12 @@ module.exports = {
       { expiresIn: process.env.RESET_TOKEN_EXPIRE }
     );
 
-    const resetUrl = `${process.env.CLIENT_URL}/user/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.CLIENT_URL}/reset-mat-khau/${resetToken}`;
 
     const message = `
-            Vui lòng click vào đây ${resetUrl} để cập nhật lại mật khẩu.
-            Link tồn tại trong 20 phút.
+      Bạn nhận được e-mail này vì bạn đã yêu cầu đặt lại mật khẩu cho tài khoản người dùng của bạn tại Mimin Shop.
+      Vui lòng click vào đây: ${resetUrl} để cập nhật lại mật khẩu.
+      Link tồn tại trong 20 phút.
         `;
 
     try {
@@ -285,7 +284,7 @@ module.exports = {
         message: "Đã gửi email.",
       });
     } catch (err) {
-      console.log(`Error send mail: ${err.message}`);
+      console.log(`Lỗi gửi mail: ${err.message}`);
 
       return res.status(400).json({
         success: false,

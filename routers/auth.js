@@ -14,6 +14,6 @@ router.put('/reset-password/:resetToken', verifyResetToken, authController.reset
 router.post('/register', authController.register)
 router.post('/login', authController.login)
 router.post('/token', verifyRefreshToken, authController.getAccessToken)
-// router.get('/logout', verifyAccessToken, authController.logout)
+router.get('/logout', verifyAccessToken, authController.logout)
 
 module.exports = router;

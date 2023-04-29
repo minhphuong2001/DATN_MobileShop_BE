@@ -12,5 +12,8 @@ router
 router
 	.route("/product/:id")
 	.get(productVersionController.getProductVersionByProduct)
+router
+	.route("/:id")
+	.put(verifyAccessToken, permission("admin"), productVersionController.update)
 
 module.exports = router;

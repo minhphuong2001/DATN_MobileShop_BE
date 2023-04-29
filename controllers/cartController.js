@@ -11,14 +11,19 @@ module.exports = {
 
     if (!(product_version && quantity)) {
       return next(new ErrorResponse(400, "Lack of information"));
-		}
-		
-    const productVersion = await ProductVersion.findOne({ _id: product_version });
+    }
+
+    const productVersion = await ProductVersion.findOne({
+      _id: product_version,
+    });
     if (!productVersion) {
       return next(new ErrorResponse(404, "Not found product"));
     }
 
-    const cart = await Cart.findOne({ user: userId, product_version: product_version });
+    const cart = await Cart.findOne({
+      user: userId,
+      product_version: product_version,
+    });
 
     if (cart) {
       cart.quantity += quantity;
@@ -42,38 +47,38 @@ module.exports = {
         data: newCart,
       });
     }
-	}),
-	
+  }),
+
   getAll: asyncHandle(async (req, res, next) => {
     console.log(req);
     const userId = req.userId;
     const carts = await Cart.find({ user: userId })
       .populate("user")
       .populate({
-        path: 'product_version',
-        model: 'product_versions',
+        path: "product_version",
+        model: "product_versions",
         populate: {
-          path: 'product',
-          model: 'products'
-        }
-     })
+          path: "product",
+          model: "products",
+        },
+      });
 
-		res.json({
-			success: true,
-			message: "Get all cart",
-			data: carts
-		});
+    res.json({
+      success: true,
+      message: "Get all cart",
+      data: carts,
+    });
   }),
 
   getCount: asyncHandle(async (req, res, next) => {
     const userId = req.userId;
     const carts = await Cart.find({ user: userId });
 
-		res.json({
-			success: true,
-			message: "Get number of product",
-			count: carts.length
-		});
+    res.json({
+      success: true,
+      message: "Get number of product",
+      count: carts.length,
+    });
   }),
 
   delete: asyncHandle(async (req, res, next) => {
@@ -88,7 +93,7 @@ module.exports = {
 
     res.json({
       success: true,
-      message: "The product has been deleted by user"
+      message: "The product has been deleted by user",
     });
   }),
 
@@ -134,10 +139,10 @@ module.exports = {
       })
     );
 
-		res.json({
-			success: true,
-			message: "Carts has been updated",
-			data: carts
-		});
+    res.json({
+      success: true,
+      message: "Carts has been updated",
+      data: carts,
+    });
   }),
 };

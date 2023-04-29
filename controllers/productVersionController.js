@@ -54,6 +54,15 @@ module.exports = {
     return sendResponse(res, "Create sucessfully", product);
   }),
 
+  update: asyncHandle(async (req, res) => {
+    let { ...body } = req.body;
+    const product = await ProductVersion.findByIdAndUpdate(req.params.id, body, {
+      new: true,
+    });
+
+    return sendResponse(res, "Update successfully.", product);
+  }),
+
 	getProductVersionByProduct: asyncHandle(async (req, res) => {
 		const product_id = req.params.id;
     const product = await ProductVersion.find({ product: { $in: [product_id] } })
