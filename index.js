@@ -3,8 +3,8 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/database");
 const cors = require("cors");
 const router = require("./routers");
-const path = require("path");
 const paypal = require("paypal-rest-sdk");
+const path = require("path");
 dotenv.config();
 
 const asyncHandle = require("./middlewares/asyncHandle");
@@ -22,10 +22,8 @@ const mongoose = require("mongoose");
 
 paypal.configure({
   mode: "sandbox",
-  client_id:
-    "AY9uhC43qxjVtkQaj6FGpLqEMo9l2ZiLzII-t65esfuPT69Imo6W4ScJWtsytPar9BpWuYKrSTxvQBwg",
-  client_secret:
-    "EEBROzMDrwyI1-ZtevlfBb5JGaaH5rHa2Fb0wnHmHygQEB_L-KFi0k02IlK3smFC09PqOFrbNSpNmTRR",
+  client_id: "AY9uhC43qxjVtkQaj6FGpLqEMo9l2ZiLzII-t65esfuPT69Imo6W4ScJWtsytPar9BpWuYKrSTxvQBwg",
+  client_secret: "EEBROzMDrwyI1-ZtevlfBb5JGaaH5rHa2Fb0wnHmHygQEB_L-KFi0k02IlK3smFC09PqOFrbNSpNmTRR"
 });
 
 const PORT = process.env.PORT || 5000;
@@ -51,8 +49,65 @@ app.post(
     const { address, phone, note, carts, ...information } = req.body;
     const body = req.body;
 
+    const USDCurrency = 23467;
+    const dataOrder = body.carts.map((item) => {
+      const dataInCart = {
+        name: item.product_version.product.product_name ? item.product_version.product.product_name : "",
+        quantity: item.quantity,
+        price:
+          (item.product_version.price -
+          (item.product_version.price * item.product_version.product.discount) / 100) / USDCurrency,
+        currency: "USD",
+        sku: item.product_version.product.images[0]
+      };
+
+      return dataInCart;
+    });
+    console.log("dataOrder: ", dataOrder);
+
+    const totalPayment = dataOrder.reduce((pre, curr) => pre + Number(curr.price) * Number(curr.quantity), 0);
+    console.log("total: " + totalPayment);
+
+    const create_payment_json = {
+      intent: "sale",
+      payer: {
+        payment_method: "paypal",
+      },
+      redirect_urls: {
+        return_url: "http://localhost:5000/api/success",
+        cancel_url: "http://localhost:5000/api/cancel",
+      },
+      transactions: [
+        {
+          item_list: {
+            items: dataOrder,
+          },
+          amount: {
+            currency: "USD",
+            total: totalPayment.toString(),
+          },
+          description: "Thanh toán thành công tại DTMP Shop",
+        },
+      ],
+    };
+
+    paypal.payment.create(create_payment_json, function (error, payment) {
+      if (error) {
+        console.log("Error when create payment: ", error);
+        res.render('cancel');
+      } else {
+          for(let i = 0;i < payment.links.length;i++){
+            if(payment.links[i].rel === 'approval_url'){
+              res.redirect(payment.links[i].href);
+            }
+          }
+      }
+    });
+
+    // save to the DB
     let id_order;
 
+    return;
     if (!carts) {
       return next(new Error(400, "Lack of information"));
     }
@@ -177,62 +232,6 @@ app.post(
     }
 
     console.log("Tao xong order: " + id_order);
-
-    const dataOrder = body.carts.map((item) => {
-      return {
-        product_name: item.product_version.product.product_name,
-        quantity: item.quantity,
-        price:
-          item.product_version.price -
-          (item.product_version.price * item.product_version.product.discount) / 100,
-        image: item.product_version.product.images[0]
-      };
-    });
-
-    const USDCurrency = 23467;
-    const totalPayment =
-      dataOrder.reduce(
-        (pre, curr) => pre + Number(curr.price) * Number(curr.quantity),
-        0
-      ) / USDCurrency;
-
-    console.log("total: " + totalPayment);
-    const createPaymentPaypal = {
-      intent: "sale",
-      payer: {
-        payment_method: "paypal",
-      },
-      redirect_urls: {
-        return_url: `http://localhost:5000/api/success?total=${totalPayment}&id_order=${id_order}`,
-        cancel_url: "http://localhost:5000/api/cancel",
-      },
-      transactions: [
-        {
-          item_list: {
-            items: dataOrder,
-          },
-          amount: {
-            currency: "USD",
-            total: totalPayment.toString(),
-          },
-          description: "Payment for products at DTMP Shop",
-        },
-      ],
-    };
-
-    paypal.payment.create(createPaymentPaypal, function (error, payment) {
-      if (error) {
-        console.log("Error when create payment: ", error);
-        res.render('cancel');
-      } else {
-          for(let i = 0;i < payment.links.length;i++){
-            if(payment.links[i].rel === 'approval_url'){
-              res.redirect(payment.links[i].href);
-              res.json(payment)
-            }
-          }
-      }
-    });
   })
 );
 
