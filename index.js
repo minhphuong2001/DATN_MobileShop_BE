@@ -22,8 +22,10 @@ const mongoose = require("mongoose");
 
 paypal.configure({
   mode: "sandbox",
-  client_id: "AY9uhC43qxjVtkQaj6FGpLqEMo9l2ZiLzII-t65esfuPT69Imo6W4ScJWtsytPar9BpWuYKrSTxvQBwg",
-  client_secret: "EEBROzMDrwyI1-ZtevlfBb5JGaaH5rHa2Fb0wnHmHygQEB_L-KFi0k02IlK3smFC09PqOFrbNSpNmTRR"
+  client_id:
+    "AY9uhC43qxjVtkQaj6FGpLqEMo9l2ZiLzII-t65esfuPT69Imo6W4ScJWtsytPar9BpWuYKrSTxvQBwg",
+  client_secret:
+    "EEBROzMDrwyI1-ZtevlfBb5JGaaH5rHa2Fb0wnHmHygQEB_L-KFi0k02IlK3smFC09PqOFrbNSpNmTRR",
 });
 
 const PORT = process.env.PORT || 5000;
@@ -49,65 +51,8 @@ app.post(
     const { address, phone, note, carts, ...information } = req.body;
     const body = req.body;
 
-    const USDCurrency = 23467;
-    const dataOrder = body.carts.map((item) => {
-      const dataInCart = {
-        name: item.product_version.product.product_name ? item.product_version.product.product_name : "",
-        quantity: item.quantity,
-        price:
-          (item.product_version.price -
-          (item.product_version.price * item.product_version.product.discount) / 100) / USDCurrency,
-        currency: "USD",
-        sku: item.product_version.product.images[0]
-      };
-
-      return dataInCart;
-    });
-    console.log("dataOrder: ", dataOrder);
-
-    const totalPayment = dataOrder.reduce((pre, curr) => pre + Number(curr.price) * Number(curr.quantity), 0);
-    console.log("total: " + totalPayment);
-
-    const create_payment_json = {
-      intent: "sale",
-      payer: {
-        payment_method: "paypal",
-      },
-      redirect_urls: {
-        return_url: "http://localhost:5000/api/success",
-        cancel_url: "http://localhost:5000/api/cancel",
-      },
-      transactions: [
-        {
-          item_list: {
-            items: dataOrder,
-          },
-          amount: {
-            currency: "USD",
-            total: totalPayment.toString(),
-          },
-          description: "Thanh toán thành công tại DTMP Shop",
-        },
-      ],
-    };
-
-    paypal.payment.create(create_payment_json, function (error, payment) {
-      if (error) {
-        console.log("Error when create payment: ", error);
-        res.render('cancel');
-      } else {
-          for(let i = 0;i < payment.links.length;i++){
-            if(payment.links[i].rel === 'approval_url'){
-              res.redirect(payment.links[i].href);
-            }
-          }
-      }
-    });
-
-    // save to the DB
     let id_order;
 
-    return;
     if (!carts) {
       return next(new Error(400, "Lack of information"));
     }
@@ -217,13 +162,6 @@ app.post(
       // End session
       await session.commitTransaction();
       session.endSession();
-
-      res.json({
-        success: true,
-        message: "Add order successfully",
-        order: newOrder,
-        orderDetails,
-      });
     } catch (error) {
       await session.abortTransaction();
       session.endSession();
@@ -231,70 +169,155 @@ app.post(
       return next(new ErrorResponse(400, error.message));
     }
 
-    console.log("Tao xong order: " + id_order);
+    console.log("tao xong order: " + id_order);
+    const USDCurrency = 23467;
+      const dataOrder = body.carts.map((item) => {
+        const dataInCart = {
+          name: item.product_version.product.product_name
+            ? item.product_version.product.product_name
+            : "",
+          quantity: item.quantity,
+          price: (
+            (item.product_version.price -
+              (item.product_version.price *
+                item.product_version.product.discount) /
+                100) /
+            USDCurrency
+          ).toFixed(2),
+          currency: "USD",
+          sku: item.product_version.product.images[0],
+        };
+
+        return dataInCart;
+      });
+
+      const totalPayment = dataOrder
+        .reduce(
+          (pre, curr) => pre + Number(curr.price) * Number(curr.quantity),
+          0
+        )
+        .toFixed(2);
+      console.log("totalPayment", totalPayment);
+
+      const create_payment_json = {
+        intent: "sale",
+        payer: {
+          payment_method: "paypal",
+        },
+        redirect_urls: {
+          return_url: `http://localhost:5000/api/success?total=${totalPayment}&id_order=${id_order}`,
+          cancel_url: `http://localhost:5000/api/cancel?total=${totalPayment}&id_order=${id_order}`,
+        },
+        transactions: [
+          {
+            item_list: {
+              items: dataOrder,
+            },
+            amount: {
+              currency: "USD",
+              total: totalPayment,
+            },
+            description: "Thanh toán thành công tại DTMP Shop",
+          },
+        ],
+      };
+
+      paypal.payment.create(create_payment_json, function (error, payment) {
+        if (error) {
+          console.log("Error when create payment: ", error);
+        } else {
+          for (let i = 0; i < payment.links.length; i++) {
+            if (payment.links[i].rel === "approval_url") {
+              return res.json(payment);
+            }
+          }
+        }
+      });
+
   })
 );
 
 app.get("/api/cancel", function (req, res) {
-  res.render("cancel");
+  const payerId = req.query.PayerID;
+  const paymentId = req.query.paymentId;
+  const total = req.query.total;
+  const id_order = req.query.id_order;
+
+  const execute_payment_json = {
+    payer_id: payerId,
+    transactions: [
+      {
+        amount: {
+          currency: "USD",
+          total: total,
+        },
+      },
+    ],
+  };
+
+  paypal.payment.execute(
+    paymentId,
+    execute_payment_json,
+    async function (error, payment) {
+      if (error) {
+        console.log("Error success: " + error);
+      } else {
+        const body = {
+          status: 5,
+          payment_method: "onPaypalPayment",
+        };
+
+        await Order.findByIdAndUpdate(id_order, body, {
+          new: true,
+        });
+      }
+    }
+  );
 });
 
 app.get("/api/success", function (req, res) {
-    const payerId = req.query.PayerID;
-    const paymentId = req.query.paymentId;
-    const total = req.query.total;
-    const id_order = req.query.id_order;
+  const payerId = req.query.PayerID;
+  const paymentId = req.query.paymentId;
+  const total = req.query.total;
+  const id_order = req.query.id_order;
 
-    const execute_payment_json = {
-      payer_id: payerId,
-      transactions: [
-        {
-          amount: {
-            currency: "USD",
-            total: total,
-          },
+  const execute_payment_json = {
+    payer_id: payerId,
+    transactions: [
+      {
+        amount: {
+          currency: "USD",
+          total: total,
         },
-      ],
-    };
+      },
+    ],
+  };
 
-    paypal.payment.execute(
-      paymentId,
-      execute_payment_json,
-      async function (error, payment) {
-        if (error) {
-          console.log("Error success: " + error);
-          res.render("cancel");
-        } else {
-          let shipping_address = payment.payer.payer_info.shipping_address;
-          let address =
-            shipping_address.recipient_name +
-            " " +
-            shipping_address.line1 +
-            " " +
-            shipping_address.line2 +
-            " " +
-            shipping_address.city +
-            " " +
-            shipping_address.state;
+  paypal.payment.execute(
+    paymentId,
+    execute_payment_json,
+    async function (error, payment) {
+      if (error) {
+        console.log("Error success: " + error);
+      } else {
+        const body = {
+          status: 6,
+          payment_method: "onPaypalPayment",
+        };
 
-          let bd = {
-            address: globalAddress || address,
-            payment_method: "paypal",
-          };
+        const newOrder = await Order.findByIdAndUpdate(id_order, body, {
+          new: true,
+        });
 
-          let newOrder = await Order.findByIdAndUpdate(id_order, bd, {
-            new: true,
-          });
-
-          res.render("success", {
-            data: {
-              payment: payment.transactions[0].item_list.items,
-              order: newOrder,
-            },
-          });
-        }
+        res.render("success", {
+          data: {
+            payment: payment.transactions[0].item_list.items,
+            order: newOrder,
+          },
+        });
       }
-    );
+    }
+  );
 });
 
 app.use(errorHandle);

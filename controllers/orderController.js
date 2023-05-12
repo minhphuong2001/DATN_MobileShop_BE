@@ -154,9 +154,11 @@ module.exports = {
   // @access Only role user
   getOrderUser: asyncHandle(async (req, res, next) => {
     const userId = req.userId;
+
     const orders = await Order.find({ user: userId })
       .populate({ path: 'order_details', populate: 'product_version' })
-      .populate('user');
+      .populate('user')
+      .sort("-createdAt")
 
     res.json({ success: true, data: orders });
   }),
@@ -176,6 +178,7 @@ module.exports = {
       total,
       totalPage,
     };
+
     const orders = await Order.find({})
       .populate({
         path: "order_details",

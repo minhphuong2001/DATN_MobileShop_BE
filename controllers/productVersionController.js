@@ -92,7 +92,7 @@ module.exports = {
             storage: item.storage
           })
           await newProduct.save();
-        } else if (item._id) {
+        } else {
           const newProduct = await ProductVersion.findByIdAndUpdate(item._id, {
             price: item.price,
             sale_price: item.sale_price,
@@ -101,10 +101,11 @@ module.exports = {
             storage: item.storage
           }, { new: true });
           return newProduct;
-        } else {
-          await ProductVersion.findByIdAndDelete(item._id);
-          return null;
         }
+        // else {
+        //   await ProductVersion.findByIdAndDelete(item._id);
+        //   return null;
+        // }
       })
     );
 

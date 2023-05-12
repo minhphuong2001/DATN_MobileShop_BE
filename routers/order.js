@@ -15,6 +15,9 @@ router
 	.route("/user-order/:id")
 	.get(verifyAccessToken, orderController.getOrder)
 router
+	.route("/update-status/:id")
+	.patch(verifyAccessToken, permission('user'), orderController.updateStatus)
+router
 	.route("/admin")
 	.get(verifyAccessToken, permission("admin"), orderController.getAllOrders)
 router

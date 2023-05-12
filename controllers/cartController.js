@@ -57,10 +57,7 @@ module.exports = {
       .populate({
         path: "product_version",
         model: "product_versions",
-        populate: {
-          path: "product",
-          model: "products",
-        },
+        populate: ["product", "color", "storage"]
       });
 
     res.json({
