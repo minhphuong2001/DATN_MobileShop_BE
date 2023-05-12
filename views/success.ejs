@@ -1,0 +1,120 @@
+<!-- <style>
+  body {
+    background-color: #f5f5fa;
+  }
+  body,
+  * {
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    width: 100%;
+  }
+  .header {
+    height: 100px;
+  }
+  .main {
+    display: flex;
+    width: 60%;
+    margin: 0 auto;
+    justify-content: space-between;
+  }
+  .left {
+    width: 65%;
+  }
+  .left-header {
+    background-color: #14aae8;
+    height: 150px;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    line-height: 150px;
+    text-align: center;
+    font-size: 32px;
+    color: #f5f5fa;
+  }
+  .line {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px;
+    padding-bottom: 10px;
+    border-bottom: #adadba solid 1px;
+  }
+  .btnBack {
+    background-color: white;
+    border: #14aae8 solid 1px;
+    margin: 20px;
+    padding: 20px;
+    border-radius: 20px;
+    text-align: center;
+    font-size: 24px;
+    color: #14aae8;
+  }
+  .btnBack a {
+    text-decoration: none;
+  }
+
+  .right {
+    width: 30%;
+    padding: 20px;
+  }
+  .right ul {
+    list-style: none;
+  }
+  .right ul li {
+    display: flex;
+    vertical-align: middle;
+    align-items: center;
+    border-bottom: #adadba 1px solid;
+  }
+  .right ul li img {
+    width: 100px;
+    height: 100px;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+</style>
+
+<div class="container">
+  <div class="header"></div>
+  <div class="main">
+    <div class="left">
+      <div class="left-header">Yay, Đặt hàng thành công!</div>
+      <div class="left-body">
+        <div class="line">
+          <p>Phương thức thanh toán</p>
+          <p>paypal</p>
+        </div>
+        <div class="line">
+          <p>Địa chỉ</p>
+          <p><%= data.order.address %></p>
+        </div>
+        <div class="line">
+          <p>Số điện thoại</p>
+          <p><%= data.order.phone %></p>
+        </div>
+        <div class="line">
+          <p>Tổng cộng</p>
+          <p><%= data.order.total_amount %> $</p>
+        </div>
+        <div class="btnBack">
+          <a href="http://localhost:3000/tai-khoan/don-mua">Xem lịch sử mua hàng</a>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <p style="font-weight: 900; margin: 10px">
+        Mã đơn hàng: <%= data?.order._id %>
+      </p>
+      <ul>
+        <% data.payment.forEach(function(item){ %>
+        <li>
+          <img src="<%=item.sku%>" alt="Ảnh sản phẩm" />
+          <p style="margin-left: 20px"><%= item.product_name %></p>
+          <p style="margin-left: 20px"><%= item.price %> $</p>
+        </li>
+        <% }); %>
+      </ul>
+    </div>
+  </div>
+</div> -->
+<h1>success</h1>

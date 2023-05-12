@@ -1,25 +1,30 @@
-const ErrorResponse = require("../helpers/ErrorResponse");
-const sendResponse = require("../helpers/SendResponse");
 const asyncHandle = require("../middlewares/asyncHandle");
-const Order = require("../models/Order");
-const OrderDetail = require("../models/OrderDetail");
+const sendResponse = require("../helpers/SendResponse");
+const ErrorResponse = require("../helpers/ErrorResponse");
 const User = require("../models/User");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const ProductVersion = require("../models/ProductVersion");
+const Order = require("../models/Order");
+const paypal = require("paypal-rest-sdk");
 const mongoose = require("mongoose");
 
+paypal.configure({
+	mode: "sandbox",
+	client_id: "AY9uhC43qxjVtkQaj6FGpLqEMo9l2ZiLzII-t65esfuPT69Imo6W4ScJWtsytPar9BpWuYKrSTxvQBwg",
+	client_secret: "EEBROzMDrwyI1-ZtevlfBb5JGaaH5rHa2Fb0wnHmHygQEB_L-KFi0k02IlK3smFC09PqOFrbNSpNmTRR"
+})
+
 module.exports = {
-  addOrder: asyncHandle(async (req, res, next) => {
+  pay: asyncHandle(async (req, res, next) => {
     const userId = req.userId;
     const { address, phone, note, carts, ...body } = req.body;
+    let order_id;
 
-    // Simple validation
-    if (!(address && phone && carts)) {
-      return next(new ErrorResponse(400, "Lack of information"));
+    if (!carts) {
+      return next(new Error(400, "Lack of information"));
     }
 
-    // Create session
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -27,6 +32,7 @@ module.exports = {
       const options = { session };
 
       const user = await User.findOne({ _id: userId }, null, options);
+
       if (!user) {
         await session.abortTransaction();
         session.endSession();
@@ -73,14 +79,6 @@ module.exports = {
         return total + quantity * (price * ((100 - discount) / 100));
       }, 0);
 
-      // Check user's account balance
-      // if(user.accountBalance < totalAmount) {
-      //     await session.abortTransaction();
-      //     session.endSession();
-
-      //     return next(new ErrorResponse(400, "User's account balance is not enough for payment"));
-      // }
-
       const order = await Order.create(
         [
           {
@@ -94,7 +92,6 @@ module.exports = {
         ],
         options
       );
-
       const newOrder = order[0];
       await user.save();
 
@@ -104,14 +101,12 @@ module.exports = {
         null,
         options
       );
-
       if (!receiver) {
         await session.abortTransaction();
         session.endSession();
 
         return next(new ErrorResponse(404, "Receiver not found"));
       }
-
       receiver.account_balance += totalAmount;
       await receiver.save();
 
@@ -125,7 +120,7 @@ module.exports = {
           price: cart.product_version.price,
         };
       });
-
+      
       const orderDetails = await OrderDetail.insertMany(
         orderDetailArray,
         options
@@ -147,89 +142,120 @@ module.exports = {
 
       return next(new ErrorResponse(400, error.message));
     }
-  }),
 
-  // @route [GET] /api/order/user
-  // @desc Get all order of user
-  // @access Only role user
-  getOrderUser: asyncHandle(async (req, res, next) => {
-    const userId = req.userId;
-    const orders = await Order.find({ user: userId })
-      .populate({ path: 'order_details', populate: 'product_version' })
-      .populate('user');
+    console.log("Tao xong order: " + id_order);
 
-    res.json({ success: true, data: orders });
-  }),
+    const dataOrder = body.carts.map((item) => {
+      return {
+        product_name: item.product_version.product.product_name,
+        quantity: item.quantity,
+        price: item.product_version.price - (item.product_version.price * item.product_version.product.discount) / 100,
+      }
+    })
 
-  // @route [GET] /api/order/admin
-  // @desc Get all order in database
-  // @access Only role admin
-  getAllOrders: asyncHandle(async (req, res, next) => {
-    const page = +req.query.page || 1;
-    const limit = +req.query.limit || 10;
-    const startIndex = (page - 1) * limit;
-    const total = await Order.countDocuments();
-    const totalPage = Math.ceil(total / limit);
-    const pagination = {
-      page,
-      limit,
-      total,
-      totalPage,
-    };
-    const orders = await Order.find({})
-      .populate({
-        path: "order_details",
-        populate: {
-          path: "product_version",
-          populate: "product"
-        }
-      })
-      .populate("user")
-      .sort("-createdAt")
-      .skip(startIndex)
-      .limit(limit);
+    const USDCurrency = 23467
+    const totalPayment = data.reduce(
+      (pre, curr) => pre + Number(curr.price) * Number(curr.quantity),
+      0
+    ) / USDCurrency;
 
-    return sendResponse(
-      res,
-      "Get list order successfully.",
-      orders,
-      pagination
-    );
-    // res.json({ success: true, orders });
-  }),
-
-  // @route [GET] /api/order/:id
-  // @desc Get order by id
-  // @access Private
-  getOrder: asyncHandle(async (req, res, next) => {
-    const orderId = req.params.id;
-
-    const order = await Order.findById(orderId)
-      .populate(
+    console.log("total: " + totalPayment);
+    const createPaymentPaypal = {
+      intent: "sale",
+      payer: {
+        payment_method: "paypal",
+      },
+      redirect_urls: {
+        return_url: `http://localhost:5000/api/success?total=${total}&id_order=${id_order}`,
+        cancel_url: "http://localhost:5000/api/cancel",
+      },
+      transactions: [
         {
-          path: "order_details",
-          populate: {
-            path: "product_version",
-            populate: ["product", "color", "storage"]
+          item_list: {
+            items: dataOrder,
+          },
+          amount: {
+            currency: "USD",
+            total: totalPayment.toString(),
+          },
+          description: "Payment for products at DTMP Shop",
+        },
+      ],
+    };
+
+    paypal.payment.create(createPaymentPaypal, function (error, payment) {
+      if (error) {
+        console.log("Error pay: " + error);
+        res.render("cancle");
+      } else {
+        for (let i = 0; i < payment.links.length; i++) {
+          if (payment.links[i].rel === "approval_url") {
+            res.json(payment);
           }
         }
-      )
-      .populate("user");
-    if (!order) return next(new ErrorResponse(404, "Not found order"));
-
-    res.json({ success: true, data: order });
+      }
+    });
   }),
 
-  updateStatus: asyncHandle(async (req, res, next) => {
-    let id = req.params.id;
-    let { ...body } = req.body;
-    let order = await Order.findByIdAndUpdate(id, body, { new: true });
-    return res.status(200).json(order);
+  orderCancel: asyncHandle(async (req, res, next) => { 
+    res.render(cancel);
   }),
 
-  deleteOrder: asyncHandle(async (req, res, next) => {
-    let id = req.params.id;
-    let order = await Order.findByIdAndDelete(id);
-    return res.status(200).json(order);
+  orderSuccess: asyncHandle(async (req, res, next) => { 
+    const payerId = req.query.PayerID;
+    const paymentId = req.query.paymentId;
+    const total = req.query.total;
+    const id_order = req.query.id_order;
+  
+    const execute_payment_json = {
+      payer_id: payerId,
+      transactions: [
+        {
+          amount: {
+            currency: "USD",
+            total: total,
+          },
+        },
+      ],
+    };
+  
+    paypal.payment.execute(
+      paymentId,
+      execute_payment_json,
+      async function (error, payment) {
+        if (error) {
+          console.log("Error success: " + error);
+          res.render("cancle");
+        } else {
+          let shipping_address = payment.payer.payer_info.shipping_address;
+          let address =
+            shipping_address.recipient_name +
+            " " +
+            shipping_address.line1 +
+            " " +
+            shipping_address.line2 +
+            " " +
+            shipping_address.city +
+            " " +
+            shipping_address.state;
+  
+          let bd = {
+            address: globalAddress || address,
+            payment_method: "paypal",
+          };
+  
+          let newOrder = await orderModel.findByIdAndUpdate(id_order, bd, {
+            new: true,
+          });
+  
+          res.render("success", {
+            data: {
+              payment: payment.transactions[0].item_list.items,
+              order: newOrder,
+            },
+          });
+        }
+      }
+    );
   }),
 };

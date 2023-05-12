@@ -20,7 +20,7 @@ router
   .get(productController.index)
   .post(
     verifyAccessToken, permission("admin"), 
-    upload.fields([{ name: 'images', maxCount: 5 }]),
+    upload.fields([{ name: 'images', maxCount: 10 }]),
     productController.create
   );
 
@@ -28,7 +28,12 @@ router
   .route("/:id")
   .get(productController.getById)
   .put(verifyAccessToken, permission("admin"), productController.update)
-  .delete(verifyAccessToken, permission("admin"), productController.delete);
+router
+  .route("/stop/:id")
+  .put(verifyAccessToken, permission("admin"), productController.stopWorking);
+router
+  .route("/active/:id")
+  .put(verifyAccessToken, permission("admin"), productController.activeWorking);
 
 router.get("/category/:id", productController.getProductByCategory)
 

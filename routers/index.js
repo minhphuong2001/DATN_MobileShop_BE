@@ -8,6 +8,8 @@ const productRouter = require("./product");
 const productVersionRouter = require("./product-version");
 const cartRouter = require("./cart");
 const orderRouter = require("./order");
+const statisticalRouter = require("./statistical");
+// const paypalRouter = require("./paypal");
 
 module.exports = (app) => {
 
@@ -28,6 +30,10 @@ module.exports = (app) => {
   app.use("/api/cart", cartRouter)
 
   app.use("/api/order", orderRouter)
+
+  app.use("/api/statistical", statisticalRouter)
+
+  // app.use("/api/paypal", paypalRouter)
   
   app.use(errorHandle);
 

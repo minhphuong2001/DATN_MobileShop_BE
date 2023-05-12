@@ -8,7 +8,7 @@ module.exports = {
     const page = +req.query.page || 1;
     const limit = +req.query.limit || 30;
     const startIndex = (page - 1) * limit;
-    const total = await User.countDocuments({ deleted: 0, role: "user" });
+    const total = await User.countDocuments();
     const totalPage = Math.ceil(total / limit);
     const pagination = {
       page,
@@ -16,7 +16,7 @@ module.exports = {
       total,
       totalPage,
     };
-    const users = await User.find({ deleted: 0, role: "user" })
+    const users = await User.find()
       .skip(startIndex)
       .sort("-createdAt")
       .limit(limit);
@@ -25,14 +25,12 @@ module.exports = {
 	}),
 	
   getById: asyncHandle(async (req, res, next) => {
-    let id = req.params.id;
-    let acc = await User.findById(id);
-    return res.status(200).json(acc);
+    let account = await User.findById(req.params.id);
+    return sendResponse(res, "Lock account.", account);
 	}),
 	
   delete: asyncHandle(async (req, res, next) => {
-    let id = req.params.id;
-    let acc = await User.findByIdAndUpdate(id, { deleted: 1 }, { new: true });
-    return res.status(200).json(acc);
+    const account = await User.findByIdAndUpdate(req.params.id, { deleted: 1 }, { new: true });
+    return sendResponse(res, "Lock account.", account);
   }),
 };

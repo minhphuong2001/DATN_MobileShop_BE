@@ -5,7 +5,7 @@ const sendResponse = require("../helpers/SendResponse");
 
 module.exports = {
   index: asyncHandle(async (req, res) => {
-    console.log(req.query);
+    // console.log(req.query);
     let conditions = {};
 
     if (req.query.product_id) {
@@ -48,10 +48,16 @@ module.exports = {
   // @route [POST] /api/product/version
   // @desc CREATE NEW PRODUCT VERSION
   create: asyncHandle(async (req, res) => {
-    const product = ProductVersion(req.body);
+    const product = ProductVersion.create(req.body);
     await product.save();
 
     return sendResponse(res, "Create sucessfully", product);
+  }),
+
+  createMany: asyncHandle(async (req, res) => {
+    const product = await ProductVersion.insertMany(req.body);
+
+    return sendResponse(res, "Create product version sucessfully", product);
   }),
 
   update: asyncHandle(async (req, res) => {
@@ -72,5 +78,36 @@ module.exports = {
 		
 		return sendResponse(res, "Get product version by same product id successfully", product);
 		
+  }),
+  
+  updateMany: asyncHandle(async (req, res) => {
+    const products = await Promise.all(
+      req.body.map(async (item) => {
+        if (item._id === "") {
+          const newProduct = await ProductVersion.create({
+            price: item.price,
+            sale_price: item.sale_price,
+            quantity: item.quantity,
+            color: item.color,
+            storage: item.storage
+          })
+          await newProduct.save();
+        } else if (item._id) {
+          const newProduct = await ProductVersion.findByIdAndUpdate(item._id, {
+            price: item.price,
+            sale_price: item.sale_price,
+            quantity: item.quantity,
+            color: item.color,
+            storage: item.storage
+          }, { new: true });
+          return newProduct;
+        } else {
+          await ProductVersion.findByIdAndDelete(item._id);
+          return null;
+        }
+      })
+    );
+
+    return sendResponse(res, "Update product version sucessfully", products);
   }),
 };

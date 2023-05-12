@@ -6,9 +6,9 @@ const cloudinary = require("../config/cloudinary");
 
 module.exports = {
   index: asyncHandle(async (req, res) => {
-    let deleted = req.query.deleted || 0;
+    // let deleted = req.query.deleted;
     let conditions = {
-      deleted: deleted,
+      // deleted: deleted,
     };
 
     if (req.query.category_id) {
@@ -101,15 +101,26 @@ module.exports = {
     return sendResponse(res, "Update successfully.", product);
   }),
 
-  delete: asyncHandle(async (req, res) => {
+  stopWorking: asyncHandle(async (req, res) => {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { deleted: 1 },
       { new: true }
     );
 
-    return sendResponse(res, "Delete successfully.", product);
+    return sendResponse(res, "Product stop working.", product);
   }),
+
+  activeWorking: asyncHandle(async (req, res) => {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { deleted: 0 },
+      { new: true }
+    );
+
+    return sendResponse(res, "Product active working.", product);
+  }),
+
 
   getProductByCategory: asyncHandle(async (req, res) => {
     console.log(categoryId);

@@ -14,9 +14,9 @@ module.exports = {
   // @desc User register
   // @access Public
   register: asyncHandle(async (req, res, next) => {
-    const { email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword, fullname } = req.body;
 
-    if (!(email && password && confirmPassword)) {
+    if (!(email && password && confirmPassword && fullname)) {
       return next(new ErrorResponse(400, "Thiếu thông tin"));
     }
 
@@ -31,7 +31,7 @@ module.exports = {
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = new User({ email, password: hashedPassword });
+    const newUser = new User({ email, fullname, password: hashedPassword });
     await newUser.save();
 
     const accessToken = jwt.sign(

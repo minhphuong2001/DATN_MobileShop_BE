@@ -8,7 +8,10 @@ const router = express.Router({ mergeParams: true });
 router
 	.route("/")
 	.get(productVersionController.index)
-	.post(verifyAccessToken, permission("admin"), productVersionController.create)
+	.post(verifyAccessToken, permission("admin"), productVersionController.createMany)
+router
+	.route("/updateMany")
+	.put(verifyAccessToken, permission("admin"), productVersionController.updateMany)
 router
 	.route("/product/:id")
 	.get(productVersionController.getProductVersionByProduct)

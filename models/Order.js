@@ -12,13 +12,13 @@ const OrderSchema = new Schema(
 		note: { type: String, default: "" },
 		status: {
 			type: Number,
-			enum: [1, 2, 3, 4, 5],
+			enum: [1, 2, 3, 4, 5, 6, 7],
 			default: 1
 		},
 		total_amount: { type: Number, require: true },
 		payment_method: { 
 			type: String,
-			enum: ["onlinePayment", "onDeliveryPayment"],
+			enum: ["onPaypalPayment", "onDeliveryPayment"],
 			default: "onDeliveryPayment"
 		},
 		user: {
