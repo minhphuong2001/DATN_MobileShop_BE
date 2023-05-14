@@ -12,7 +12,12 @@ const OrderSchema = new Schema(
 		note: { type: String, default: "" },
 		status: {
 			type: Number,
-			enum: [1, 2, 3, 4, 5, 6, 7],
+			enum: [1, 2, 3, 4, 5, 6],
+			default: 1
+		},
+		statusPayment: {
+			type: Number,
+			enum: [1, 2],
 			default: 1
 		},
 		total_amount: { type: Number, require: true },

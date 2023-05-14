@@ -15,10 +15,9 @@ module.exports = {
       conditions.category = req.query.category_id;
     }
 
-    if (req.query.name) {
-      console.log(req.query.name.length);
-      if (req.query.name.length > 2)
-        conditions.name = new RegExp(req.query.name, "ig");
+    if (req.query.product_name) {
+      if (req.query.product_name.length > 2)
+        conditions.product_name = new RegExp(req.query.product_name, "ig");
     }
 
     if (req.query.min_price) {

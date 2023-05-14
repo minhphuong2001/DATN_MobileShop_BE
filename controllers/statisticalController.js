@@ -1,12 +1,11 @@
-const ProductVersion = require("../models/ProductVersion");
+const Product = require("../models/Product");
 const Order = require("../models/Order");
 const User = require("../models/User");
 const asyncHandle = require("../middlewares/asyncHandle");
-const sendResponse = require("../helpers/SendResponse");
 
 module.exports = {
   index: asyncHandle(async (req, res) => {
-    const product = await ProductVersion.countDocuments();
+    const product = await Product.countDocuments();
     const order = await Order.countDocuments();
 		const user = await User.countDocuments();
     const listOrders = await Order.find({});

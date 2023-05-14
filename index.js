@@ -263,8 +263,7 @@ app.get("/api/cancel", function (req, res) {
         console.log("Error success: " + error);
       } else {
         const body = {
-          status: 5,
-          payment_method: "onPaypalPayment",
+          payment_method: "onDeliveryPayment",
         };
 
         await Order.findByIdAndUpdate(id_order, body, {
@@ -301,7 +300,7 @@ app.get("/api/success", function (req, res) {
         console.log("Error success: " + error);
       } else {
         const body = {
-          status: 6,
+          statusPayment: 2,
           payment_method: "onPaypalPayment",
         };
 
